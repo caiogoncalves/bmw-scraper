@@ -1,602 +1,1045 @@
 <!DOCTYPE html>
 <html lang="pt">
+
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>BMW Car Finder | iX3 & X3 Analyzer</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<style>
-  :root {
-    --bg:       #08090d;
-    --bg1:      #111318;
-    --bg2:      #1a1d25;
-    --bg3:      #22263200;
-    --border:   #252a35;
-    --blue:     #1c6ef3;
-    --blue-glow:#1c6ef340;
-    --blue-dim: #1c6ef320;
-    --text:     #e8ecf4;
-    --muted:    #6b7280;
-    --green:    #22c55e;
-    --amber:    #f59e0b;
-    --red:      #ef4444;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BMW Car Finder | iX3 & X3 Analyzer</title>
+  <meta name="description"
+    content="Dashboard interativo para análise e comparação de BMW ocasion no mercado holandês." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #08090d;
+      --bg1: #111318;
+      --bg2: #1a1d25;
+      --border: #252a35;
+      --blue: #1c6ef3;
+      --blue-g: #1c6ef340;
+      --blue-d: #1c6ef318;
+      --text: #e8ecf4;
+      --muted: #6b7280;
+      --green: #22c55e;
+      --amber: #f59e0b;
+      --red: #ef4444;
+    }
 
-  /* ── NAV ── */
-  nav {
-    position: sticky; top: 0; z-index: 100;
-    background: rgba(8,9,13,0.9); backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 32px; height: 64px;
-  }
-  .logo { display: flex; align-items: center; gap: 12px; }
-  .logo-icon {
-    width: 36px; height: 36px; border-radius: 10px;
-    background: var(--blue); display: flex; align-items: center; justify-content: center;
-    font-weight: 900; font-size: 16px; color: #fff; letter-spacing: -1px;
-  }
-  .logo-text { font-weight: 800; font-size: 17px; letter-spacing: -0.5px; }
-  .logo-text span { color: var(--blue); }
-  .nav-badge {
-    background: var(--blue-dim); border: 1px solid var(--blue-glow);
-    color: var(--blue); padding: 4px 12px; border-radius: 999px;
-    font-size: 12px; font-weight: 600;
-  }
+    *,
+    ::before,
+    ::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-  /* ── LAYOUT ── */
-  .layout { display: grid; grid-template-columns: 280px 1fr; min-height: calc(100vh - 64px); }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+    }
 
-  /* ── SIDEBAR ── */
-  aside {
-    background: var(--bg1); border-right: 1px solid var(--border);
-    padding: 24px 20px; display: flex; flex-direction: column; gap: 20px;
-    height: calc(100vh - 64px); overflow-y: auto; position: sticky; top: 64px;
-  }
-  .filter-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
-  .filter-group { display: flex; flex-direction: column; gap: 8px; }
-  label { font-size: 12px; color: var(--muted); font-weight: 500; }
-  input[type=text], input[type=number], select {
-    width: 100%; padding: 9px 12px; border-radius: 10px;
-    background: var(--bg2); border: 1px solid var(--border);
-    color: var(--text); font-size: 13px; font-family: inherit;
-    transition: border-color .2s;
-  }
-  input:focus, select:focus { outline: none; border-color: var(--blue); }
-  .range-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; transition: border-color .2s; }
-  .toggle-row:hover { border-color: var(--blue); }
-  .toggle-row span { font-size: 13px; font-weight: 500; }
-  .toggle { width: 36px; height: 20px; background: var(--border); border-radius: 999px; position: relative; transition: background .2s; cursor: pointer; }
-  .toggle.on { background: var(--blue); }
-  .toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; background: #fff; border-radius: 50%; transition: transform .2s; }
-  .toggle.on::after { transform: translateX(16px); }
-  .btn-apply {
-    padding: 12px; border-radius: 12px; border: none;
-    background: var(--blue); color: #fff; font-weight: 700; font-size: 14px;
-    cursor: pointer; transition: opacity .15s; width: 100%;
-  }
-  .btn-apply:hover { opacity: 0.85; }
-  .btn-reset { background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+    /* NAV */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(8, 9, 13, .92);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      height: 62px;
+      gap: 16px;
+    }
 
-  /* ── MAIN ── */
-  main { padding: 28px 32px; display: flex; flex-direction: column; gap: 28px; overflow-x: hidden; }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
 
-  /* ── KPI CARDS ── */
-  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; }
-  .kpi-card {
-    background: var(--bg1); border: 1px solid var(--border); border-radius: 16px;
-    padding: 20px 20px 16px;
-  }
-  .kpi-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
-  .kpi-value { font-size: 28px; font-weight: 900; letter-spacing: -1px; margin-top: 6px; }
-  .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
-  .kpi-blue  { border-color: var(--blue-glow); }
-  .kpi-green { border-color: #22c55e30; }
-  .kpi-amber { border-color: #f59e0b30; }
+    .logo-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      background: var(--blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 15px;
+      color: #fff;
+    }
 
-  /* ── CHARTS ── */
-  .charts-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
-  .chart-card {
-    background: var(--bg1); border: 1px solid var(--border); border-radius: 16px;
-    padding: 20px;
-  }
-  .chart-card.wide { grid-column: span 2; }
-  .chart-title { font-size: 13px; font-weight: 700; margin-bottom: 16px; }
+    .logo-text {
+      font-weight: 800;
+      font-size: 16px;
+      letter-spacing: -.5px;
+    }
 
-  /* ── TABLE ── */
-  .table-card { background: var(--bg1); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
-  .table-header {
-    padding: 18px 24px; border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
-  }
-  .table-title { font-size: 14px; font-weight: 700; }
-  .result-count { font-size: 12px; color: var(--muted); }
-  .sort-row { display: flex; gap: 8px; }
-  .sort-btn {
-    padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border);
-    background: var(--bg2); color: var(--muted); font-size: 12px; font-weight: 600;
-    cursor: pointer; transition: all .15s; font-family: inherit;
-  }
-  .sort-btn:hover, .sort-btn.active { background: var(--blue-dim); border-color: var(--blue); color: var(--blue); }
-  .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  thead tr { background: var(--bg2); }
-  th { padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; }
-  td { padding: 13px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
-  tr:last-child td { border: none; }
-  tr:hover td { background: rgba(28,110,243,0.04); }
-  .car-name { font-weight: 600; color: var(--text); }
-  .car-version { font-size: 11px; color: var(--muted); margin-top: 2px; }
-  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
-  .badge-green { background: #22c55e15; color: var(--green); }
-  .badge-amber { background: #f59e0b15; color: var(--amber); }
-  .badge-blue  { background: var(--blue-dim); color: var(--blue); }
-  .badge-gray  { background: var(--bg2); color: var(--muted); }
-  .score-bar-wrap { display: flex; align-items: center; gap: 8px; min-width: 100px; }
-  .score-bar { height: 4px; border-radius: 2px; background: var(--border); flex: 1; overflow: hidden; }
-  .score-bar-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--blue), #5a9ef8); transition: width .4s; }
-  .score-val { font-size: 12px; font-weight: 700; color: var(--blue); min-width: 32px; text-align: right; }
-  .car-link { color: var(--blue); text-decoration: none; font-size: 12px; }
-  .car-link:hover { text-decoration: underline; }
+    .logo-text em {
+      color: var(--blue);
+      font-style: normal;
+    }
 
-  /* ── PAGINATION ── */
-  .pagination { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 20px; flex-wrap: wrap; }
-  .page-btn {
-    width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--border);
-    background: var(--bg2); color: var(--muted); cursor: pointer; font-size: 13px;
-    font-weight: 600; transition: all .15s; font-family: inherit;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .page-btn:hover, .page-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
-  .page-btn:disabled { opacity: 0.3; cursor: default; }
+    .nav-meta {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 12px;
+      color: var(--muted);
+    }
 
-  /* ── LOADING ── */
-  .loading { text-align: center; padding: 60px; color: var(--muted); }
-  .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto 12px; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+    .nav-badge {
+      background: var(--blue-d);
+      border: 1px solid var(--blue-g);
+      color: var(--blue);
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
 
-  @media (max-width: 1100px) {
-    .layout { grid-template-columns: 1fr; }
-    aside { position: static; height: auto; }
-    .charts-grid { grid-template-columns: 1fr; }
-    .chart-card.wide { grid-column: span 1; }
-  }
-</style>
+    /* LAYOUT */
+    .layout {
+      display: grid;
+      grid-template-columns: 268px 1fr;
+      min-height: calc(100vh - 62px);
+    }
+
+    /* SIDEBAR */
+    aside {
+      background: var(--bg1);
+      border-right: 1px solid var(--border);
+      padding: 20px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      height: calc(100vh - 62px);
+      overflow-y: auto;
+      position: sticky;
+      top: 62px;
+    }
+
+    aside::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    aside::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 99px;
+    }
+
+    .f-section-title {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      margin-bottom: 7px;
+    }
+
+    .f-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .f-input {
+      width: 100%;
+      padding: 8px 11px;
+      border-radius: 9px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+      transition: border-color .2s;
+    }
+
+    .f-input:focus {
+      outline: none;
+      border-color: var(--blue);
+    }
+
+    .range-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 12px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      cursor: pointer;
+      transition: border-color .2s;
+      user-select: none;
+    }
+
+    .toggle-row:hover {
+      border-color: var(--blue-g);
+    }
+
+    .toggle-row span {
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .pill {
+      width: 34px;
+      height: 18px;
+      background: var(--border);
+      border-radius: 99px;
+      position: relative;
+      transition: background .2s;
+      flex-shrink: 0;
+    }
+
+    .pill.on {
+      background: var(--blue);
+    }
+
+    .pill::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 12px;
+      height: 12px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform .2s;
+    }
+
+    .pill.on::after {
+      transform: translateX(16px);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 11px;
+      border-radius: 11px;
+      border: none;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity .15s, background .15s;
+    }
+
+    .btn-primary {
+      background: var(--blue);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      opacity: .85;
+    }
+
+    .btn-ghost {
+      background: var(--bg2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover {
+      border-color: var(--blue-g);
+      color: var(--text);
+    }
+
+    /* MAIN */
+    main {
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      overflow-x: hidden;
+    }
+
+    /* KPI */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+      gap: 14px;
+    }
+
+    .kpi {
+      background: var(--bg1);
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      padding: 18px 18px 14px;
+    }
+
+    .kpi-lbl {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .09em;
+    }
+
+    .kpi-val {
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      margin-top: 5px;
+    }
+
+    .kpi-sub {
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    .kpi.hi-blue {
+      border-color: var(--blue-g);
+    }
+
+    .kpi.hi-green {
+      border-color: #22c55e30;
+    }
+
+    .kpi.hi-amber {
+      border-color: #f59e0b30;
+    }
+
+    /* CHARTS ROW */
+    .chart-row {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 16px;
+    }
+
+    .chart-row2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .chart-card {
+      background: var(--bg1);
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      padding: 18px 20px;
+    }
+
+    .chart-card.span2 {
+      grid-column: span 2;
+    }
+
+    .chart-label {
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+
+    /* TABLE */
+    .tcard {
+      background: var(--bg1);
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      overflow: hidden;
+    }
+
+    .thead {
+      padding: 16px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: space-between;
+    }
+
+    .thead-left .t-title {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .thead-left .t-count {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .sort-pills {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+
+    .spill {
+      padding: 5px 12px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+      font-family: inherit;
+    }
+
+    .spill:hover,
+    .spill.on {
+      background: var(--blue-d);
+      border-color: var(--blue-g);
+      color: var(--blue);
+    }
+
+    .tw {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+    }
+
+    thead tr {
+      background: var(--bg2);
+    }
+
+    th {
+      padding: 10px 15px;
+      text-align: left;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .09em;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 12px 15px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border: none;
+    }
+
+    tr:hover td {
+      background: rgba(28, 110, 243, .035);
+    }
+
+    .cname {
+      font-weight: 600;
+    }
+
+    .cver {
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-size: 10px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .b-green {
+      background: #22c55e15;
+      color: var(--green);
+    }
+
+    .b-amber {
+      background: #f59e0b15;
+      color: var(--amber);
+    }
+
+    .b-blue {
+      background: var(--blue-d);
+      color: var(--blue);
+    }
+
+    .b-gray {
+      background: var(--bg2);
+      color: var(--muted);
+    }
+
+    .sbar {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 90px;
+    }
+
+    .sbar-bg {
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border);
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .sbar-fill {
+      height: 100%;
+      border-radius: 2px;
+      background: linear-gradient(90deg, var(--blue), #60a5fa);
+    }
+
+    .sbar-val {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--blue);
+      min-width: 30px;
+      text-align: right;
+    }
+
+    .lnk {
+      color: var(--blue);
+      font-size: 11px;
+      text-decoration: none;
+    }
+
+    .lnk:hover {
+      text-decoration: underline;
+    }
+
+    /* PAGINATION */
+    .pages {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 18px;
+      flex-wrap: wrap;
+    }
+
+    .pbtn {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all .15s;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pbtn:hover,
+    .pbtn.on {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+
+    .pbtn:disabled {
+      opacity: .3;
+      cursor: default;
+    }
+
+    /* LOADING OVERLAY */
+    #overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      transition: opacity .4s;
+    }
+
+    #overlay.hide {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+
+    .ov-logo {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -1px;
+    }
+
+    .ov-logo em {
+      color: var(--blue);
+      font-style: normal;
+    }
+
+    .ov-sub {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (max-width: 1000px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      aside {
+        position: static;
+        height: auto;
+      }
+
+      .chart-row,
+      .chart-row2 {
+        grid-template-columns: 1fr;
+      }
+
+      .chart-card.span2 {
+        grid-column: span 1;
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-<nav>
-  <div class="logo">
-    <div class="logo-icon">B</div>
-    <div class="logo-text">BMW <span>Car Finder</span></div>
+  <!-- LOADING OVERLAY -->
+  <div id="overlay">
+    <div class="ov-logo">BMW <em>Car Finder</em></div>
+    <div class="spinner"></div>
+    <div class="ov-sub">A carregar dados…</div>
   </div>
-  <span class="nav-badge" id="nav-total">Carregando…</span>
-</nav>
 
-<div class="layout">
-  <!-- ── FILTERS ── -->
-  <aside>
-    <div>
-      <div class="filter-title">🔍 Busca</div>
-      <div class="filter-group">
-        <input type="text" id="f-search" placeholder="Ex: iX3, X3, Série 5…" />
-      </div>
+  <!-- NAV -->
+  <nav>
+    <div class="logo">
+      <div class="logo-icon">B</div>
+      <div class="logo-text">BMW <em>Car Finder</em></div>
     </div>
+    <div class="nav-meta">
+      <span id="nav-updated" style="display:none">Atualizado recentemente</span>
+      <span class="nav-badge" id="nav-count">—</span>
+    </div>
+  </nav>
 
-    <div>
-      <div class="filter-title">📅 Ano</div>
-      <div class="range-row">
-        <div class="filter-group">
-          <label>De</label>
-          <input type="number" id="f-min-year" placeholder="2018" min="2010" max="2026" />
-        </div>
-        <div class="filter-group">
-          <label>Até</label>
-          <input type="number" id="f-max-year" placeholder="2025" min="2010" max="2026" />
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <aside>
+      <div>
+        <div class="f-section-title">🔍 Busca</div>
+        <div class="f-group">
+          <input class="f-input" id="f-search" type="text" placeholder="iX3, X3, Série 5…" />
         </div>
       </div>
-    </div>
 
-    <div>
-      <div class="filter-title">💰 Preço (€)</div>
-      <div class="range-row">
-        <div class="filter-group">
-          <label>Mínimo</label>
-          <input type="number" id="f-min-price" placeholder="0" step="1000" />
-        </div>
-        <div class="filter-group">
-          <label>Máximo</label>
-          <input type="number" id="f-max-price" placeholder="100000" step="1000" />
+      <div>
+        <div class="f-section-title">📅 Ano</div>
+        <div class="range-pair">
+          <div class="f-group"><label>De</label><input class="f-input" id="f-min-year" type="number"
+              placeholder="2018" /></div>
+          <div class="f-group"><label>Até</label><input class="f-input" id="f-max-year" type="number"
+              placeholder="2025" /></div>
         </div>
       </div>
-    </div>
 
-    <div>
-      <div class="filter-title">🛣️ Quilometragem máxima (km)</div>
-      <div class="filter-group">
-        <input type="number" id="f-max-mileage" placeholder="Ex: 80000" step="5000" />
-      </div>
-    </div>
-
-    <div>
-      <div class="filter-title">⚡ Combustível</div>
-      <div class="filter-group">
-        <select id="f-fuel">
-          <option value="">Todos</option>
-          <option value="Elektrisch">Elétrico</option>
-          <option value="Hybride">Híbrido</option>
-          <option value="Benzine">Gasolina</option>
-          <option value="Diesel">Diesel</option>
-        </select>
-      </div>
-    </div>
-
-    <div>
-      <div class="filter-title">✨ Opcionais</div>
-      <div class="filter-group" style="gap:10px">
-        <div class="toggle-row" onclick="toggleFilter('trekhaak')">
-          <span>🔗 Tem Trekhaak</span>
-          <div class="toggle" id="toggle-trekhaak"></div>
-        </div>
-        <div class="toggle-row" onclick="toggleFilter('zwart')">
-          <span>🖤 Cor Preta (Zwart)</span>
-          <div class="toggle" id="toggle-zwart"></div>
+      <div>
+        <div class="f-section-title">💰 Preço (€)</div>
+        <div class="range-pair">
+          <div class="f-group"><label>Mín</label><input class="f-input" id="f-min-price" type="number" placeholder="0"
+              step="1000" /></div>
+          <div class="f-group"><label>Máx</label><input class="f-input" id="f-max-price" type="number"
+              placeholder="100000" step="1000" /></div>
         </div>
       </div>
-    </div>
 
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <button class="btn-apply" onclick="applyFilters()">Aplicar Filtros</button>
-      <button class="btn-apply btn-reset" onclick="resetFilters()">Limpar Filtros</button>
-    </div>
-  </aside>
+      <div>
+        <div class="f-section-title">🛣️ Km máximo</div>
+        <div class="f-group"><input class="f-input" id="f-max-km" type="number" placeholder="80000" step="5000" /></div>
+      </div>
 
-  <!-- ── MAIN CONTENT ── -->
-  <main>
-    <!-- KPIs -->
-    <div class="kpi-grid" id="kpi-grid">
-      <div class="kpi-card kpi-blue">
-        <div class="kpi-label">Total de Carros</div>
-        <div class="kpi-value" id="kpi-total">—</div>
-        <div class="kpi-sub">na base de dados</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Preço Médio</div>
-        <div class="kpi-value" id="kpi-price">—</div>
-        <div class="kpi-sub">preço médio BMW</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Km Médio</div>
-        <div class="kpi-value" id="kpi-mileage">—</div>
-        <div class="kpi-sub">quilometragem média</div>
-      </div>
-      <div class="kpi-card kpi-green">
-        <div class="kpi-label">Score Médio</div>
-        <div class="kpi-value" id="kpi-score">—</div>
-        <div class="kpi-sub">pontuação média</div>
-      </div>
-      <div class="kpi-card kpi-amber">
-        <div class="kpi-label">Com Trekhaak</div>
-        <div class="kpi-value" id="kpi-trekhaak">—</div>
-        <div class="kpi-sub">têm engate</div>
-      </div>
-    </div>
-
-    <!-- CHARTS -->
-    <div class="charts-grid">
-      <div class="chart-card wide">
-        <div class="chart-title">📊 Score vs Preço (Top 200)</div>
-        <canvas id="chart-scatter" height="180"></canvas>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">⛽ Combustível</div>
-        <canvas id="chart-fuel" height="180"></canvas>
-      </div>
-      <div class="chart-card wide">
-        <div class="chart-title">💰 Distribuição de Preços</div>
-        <canvas id="chart-price" height="120"></canvas>
-      </div>
-    </div>
-
-    <!-- TABLE -->
-    <div class="table-card">
-      <div class="table-header">
-        <div>
-          <div class="table-title">🚗 Carros Encontrados</div>
-          <div class="result-count" id="result-count">—</div>
-        </div>
-        <div class="sort-row">
-          <button class="sort-btn active" id="sort-score" onclick="setSort('final_score')">🏆 Score</button>
-          <button class="sort-btn" id="sort-price" onclick="setSort('price_numeric')">💰 Preço</button>
-          <button class="sort-btn" id="sort-mileage" onclick="setSort('mileage_numeric')">🛣️ Km</button>
-          <button class="sort-btn" id="sort-year" onclick="setSort('built_year')">📅 Ano</button>
+      <div>
+        <div class="f-section-title">⚡ Combustível</div>
+        <div class="f-group">
+          <select class="f-input" id="f-fuel">
+            <option value="">Todos</option>
+            <option value="Elektrisch">⚡ Elétrico</option>
+            <option value="Hybride">🔋 Híbrido</option>
+            <option value="Benzine">⛽ Gasolina</option>
+            <option value="Diesel">🛢 Diesel</option>
+          </select>
         </div>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Carro</th>
-              <th>Ano</th>
-              <th>Preço</th>
-              <th>Quilómetros</th>
-              <th>Combustível</th>
-              <th>Cor</th>
-              <th>Extras</th>
-              <th>Score</th>
-              <th>Link</th>
-            </tr>
-          </thead>
-          <tbody id="table-body">
-            <tr><td colspan="10" class="loading"><div class="spinner"></div>A carregar dados…</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="pagination" id="pagination"></div>
-    </div>
-  </main>
-</div>
 
-<script>
-// ── State ─────────────────────────────────────────────────────────────────────
-const state = {
-  page: 1,
-  sort: 'final_score',
-  dir:  'desc',
-  trekhaak: false,
-  zwart: false,
-};
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-const fmt = {
-  euro:   n => n > 0 ? `€ ${Number(n).toLocaleString('nl-NL')}` : '—',
-  km:     n => n > 0 ? `${Number(n).toLocaleString('nl-NL')} km` : '—',
-  score:  n => Number(n).toFixed(1),
-};
-
-function toggleFilter(key) {
-  state[key] = !state[key];
-  document.getElementById('toggle-' + key).classList.toggle('on', state[key]);
-}
-
-function setSort(col) {
-  if (state.sort === col) {
-    state.dir = state.dir === 'desc' ? 'asc' : 'desc';
-  } else {
-    state.sort = col;
-    state.dir  = col === 'price_numeric' || col === 'mileage_numeric' ? 'asc' : 'desc';
-  }
-  document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('sort-' + col.replace('_numeric','').replace('final_',''))?.classList.add('active');
-  state.page = 1;
-  loadCars();
-}
-
-function buildParams(extra = {}) {
-  const p = new URLSearchParams({
-    search:      document.getElementById('f-search').value.trim(),
-    min_year:    document.getElementById('f-min-year').value,
-    max_year:    document.getElementById('f-max-year').value,
-    min_price:   document.getElementById('f-min-price').value,
-    max_price:   document.getElementById('f-max-price').value,
-    max_mileage: document.getElementById('f-max-mileage').value,
-    fuel:        document.getElementById('f-fuel').value,
-    trekhaak:    state.trekhaak ? '1' : '',
-    zwart:       state.zwart    ? '1' : '',
-    sort:        state.sort,
-    dir:         state.dir,
-    page:        state.page,
-    per_page:    25,
-    ...extra,
-  });
-  // Remove empty params
-  for (const [k, v] of [...p.entries()]) if (!v) p.delete(k);
-  return p.toString();
-}
-
-function applyFilters() {
-  state.page = 1;
-  loadCars();
-}
-
-function resetFilters() {
-  document.getElementById('f-search').value    = '';
-  document.getElementById('f-min-year').value  = '';
-  document.getElementById('f-max-year').value  = '';
-  document.getElementById('f-min-price').value = '';
-  document.getElementById('f-max-price').value = '';
-  document.getElementById('f-max-mileage').value = '';
-  document.getElementById('f-fuel').value      = '';
-  state.trekhaak = false;
-  state.zwart    = false;
-  document.getElementById('toggle-trekhaak').classList.remove('on');
-  document.getElementById('toggle-zwart').classList.remove('on');
-  state.page = 1;
-  loadCars();
-}
-
-// ── KPI ───────────────────────────────────────────────────────────────────────
-async function loadStats() {
-  const r = await fetch('/api/stats');
-  const d = await r.json();
-  document.getElementById('kpi-total').textContent    = d.total.toLocaleString('nl-NL');
-  document.getElementById('kpi-price').textContent    = fmt.euro(d.avg_price);
-  document.getElementById('kpi-mileage').textContent  = fmt.km(d.avg_mileage);
-  document.getElementById('kpi-score').textContent    = d.avg_score;
-  document.getElementById('kpi-trekhaak').textContent = d.with_trekhaak.toLocaleString('nl-NL');
-  document.getElementById('nav-total').textContent    = `${d.total.toLocaleString('nl-NL')} carros`;
-}
-
-// ── TABLE ─────────────────────────────────────────────────────────────────────
-async function loadCars() {
-  const tbody = document.getElementById('table-body');
-  tbody.innerHTML = '<tr><td colspan="10" class="loading"><div class="spinner"></div>A carregar…</td></tr>';
-
-  const r = await fetch('/api/cars?' + buildParams());
-  const d = await r.json();
-
-  document.getElementById('result-count').textContent = `${d.total.toLocaleString('nl-NL')} resultados encontrados`;
-
-  if (!d.cars.length) {
-    tbody.innerHTML = '<tr><td colspan="10" class="loading">Nenhum carro encontrado com esses filtros.</td></tr>';
-    document.getElementById('pagination').innerHTML = '';
-    return;
-  }
-
-  const offset = (d.page - 1) * d.per_page;
-  tbody.innerHTML = d.cars.map((c, i) => {
-    const score  = parseFloat(c.final_score) || 0;
-    const pct    = Math.min(100, score).toFixed(0);
-    const extras = [
-      c.has_trekhaak == 1 ? '<span class="badge badge-amber">🔗 Trekhaak</span>' : '',
-      c.is_zwart     == 1 ? '<span class="badge badge-gray">🖤 Zwart</span>'     : '',
-    ].filter(Boolean).join(' ');
-
-    const fuel = (c.fuel_type || '').toLowerCase();
-    const fuelBadge = fuel.includes('elektr')  ? '<span class="badge badge-green">⚡ Elétrico</span>'
-                    : fuel.includes('hybride') ? '<span class="badge badge-blue">🔋 Híbrido</span>'
-                    : fuel.includes('benzine') ? '<span class="badge badge-amber">⛽ Gasolina</span>'
-                    : fuel.includes('diesel')  ? '<span class="badge badge-gray">🛢 Diesel</span>'
-                    : `<span class="badge badge-gray">${c.fuel_type || '—'}</span>`;
-
-    return `<tr>
-      <td style="color:var(--muted);font-size:12px">${offset + i + 1}</td>
-      <td>
-        <div class="car-name">${c.name || '—'}</div>
-        <div class="car-version">${c.version || ''}</div>
-      </td>
-      <td>${c.built_year > 0 ? c.built_year : '—'}</td>
-      <td style="font-weight:600">${fmt.euro(c.price_numeric)}</td>
-      <td>${fmt.km(c.mileage_numeric)}</td>
-      <td>${fuelBadge}</td>
-      <td style="font-size:12px">${c.color || '—'}</td>
-      <td>${extras || '<span style="color:var(--muted);font-size:11px">—</span>'}</td>
-      <td>
-        <div class="score-bar-wrap">
-          <div class="score-bar"><div class="score-bar-fill" style="width:${pct}%"></div></div>
-          <div class="score-val">${fmt.score(score)}</div>
+      <div>
+        <div class="f-section-title">✨ Extra</div>
+        <div class="f-group" style="gap:8px">
+          <div class="toggle-row" onclick="toggle('trekhaak')">
+            <span>🔗 Tem Trekhaak</span>
+            <div class="pill" id="pill-trekhaak"></div>
+          </div>
+          <div class="toggle-row" onclick="toggle('zwart')">
+            <span>🖤 Cor Preta</span>
+            <div class="pill" id="pill-zwart"></div>
+          </div>
         </div>
-      </td>
-      <td>${c.url && c.url !== 'N/A' ? `<a class="car-link" href="${c.url}" target="_blank">Ver →</a>` : '—'}</td>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-primary" onclick="render()">Aplicar Filtros</button>
+        <button class="btn btn-ghost" onclick="resetAll()">Limpar Filtros</button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main>
+      <!-- KPIs -->
+      <div class="kpi-row" id="kpis"></div>
+
+      <!-- CHARTS -->
+      <div class="chart-row">
+        <div class="chart-card">
+          <div class="chart-label">📊 Score vs Preço (top 300)</div>
+          <canvas id="cScatter" height="200"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-label">⛽ Combustível</div>
+          <canvas id="cFuel" height="200"></canvas>
+        </div>
+      </div>
+      <div class="chart-row2">
+        <div class="chart-card">
+          <div class="chart-label">💰 Distribuição de Preços</div>
+          <canvas id="cPrice" height="140"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-label">📅 Carros por Ano</div>
+          <canvas id="cYear" height="140"></canvas>
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <div class="tcard">
+        <div class="thead">
+          <div class="thead-left">
+            <div class="t-title">🚗 Resultados</div>
+            <div class="t-count" id="t-count">—</div>
+          </div>
+          <div class="sort-pills">
+            <button class="spill on" id="s-score" onclick="setSort('final_score','desc')">🏆 Score</button>
+            <button class="spill" id="s-price" onclick="setSort('price_numeric','asc')">💰 Preço</button>
+            <button class="spill" id="s-mileage" onclick="setSort('mileage_numeric','asc')">🛣️ Km</button>
+            <button class="spill" id="s-year" onclick="setSort('built_year','desc')">📅 Ano</button>
+          </div>
+        </div>
+        <div class="tw">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Carro</th>
+                <th>Ano</th>
+                <th>Preço</th>
+                <th>Quilómetros</th>
+                <th>Combustível</th>
+                <th>Cor</th>
+                <th>Extra</th>
+                <th>Score</th>
+                <th>Link</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <div class="pages" id="pages"></div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // ─── State ───────────────────────────────────────────────────────────────────
+    let ALL = [];
+    let FILTERED = [];
+    let PAGE = 1;
+    const PER = 25;
+    let SORT_KEY = 'final_score';
+    let SORT_DIR = 'desc';
+    const TOGGLES = { trekhaak: false, zwart: false };
+    let charts = {};
+
+    // ─── Load Data ───────────────────────────────────────────────────────────────
+    async function init() {
+      const r = await fetch('/data/bmw_data.json');
+      ALL = await r.json();
+      document.getElementById('overlay').classList.add('hide');
+      document.getElementById('nav-count').textContent = `${ALL.length.toLocaleString('nl-NL')} carros`;
+      renderKPI(ALL);
+      renderCharts(ALL);
+      render();
+    }
+
+    // ─── Filters ─────────────────────────────────────────────────────────────────
+    function getFilters() {
+      return {
+        search: document.getElementById('f-search').value.trim().toLowerCase(),
+        minYear: +document.getElementById('f-min-year').value || 0,
+        maxYear: +document.getElementById('f-max-year').value || 9999,
+        minPrice: +document.getElementById('f-min-price').value || 0,
+        maxPrice: +document.getElementById('f-max-price').value || Infinity,
+        maxKm: +document.getElementById('f-max-km').value || Infinity,
+        fuel: document.getElementById('f-fuel').value.toLowerCase(),
+        trekhaak: TOGGLES.trekhaak,
+        zwart: TOGGLES.zwart,
+      };
+    }
+
+    function applyFilters() {
+      const f = getFilters();
+      FILTERED = ALL.filter(c => {
+        if (f.search && !((c.name || '').toLowerCase().includes(f.search) || (c.version || '').toLowerCase().includes(f.search))) return false;
+        if (f.minYear && c.built_year < f.minYear) return false;
+        if (f.maxYear < 9999 && c.built_year > f.maxYear) return false;
+        if (f.minPrice && c.price_numeric < f.minPrice) return false;
+        if (f.maxPrice < Infinity && c.price_numeric > f.maxPrice) return false;
+        if (f.maxKm < Infinity && c.mileage_numeric > f.maxKm) return false;
+        if (f.fuel && !(c.fuel_type || '').toLowerCase().includes(f.fuel)) return false;
+        if (f.trekhaak && c.has_trekhaak !== 1) return false;
+        if (f.zwart && c.is_zwart !== 1) return false;
+        return true;
+      });
+      // Sort
+      FILTERED.sort((a, b) => {
+        const av = a[SORT_KEY] ?? 0;
+        const bv = b[SORT_KEY] ?? 0;
+        return SORT_DIR === 'desc' ? bv - av : av - bv;
+      });
+    }
+
+    function toggle(key) {
+      TOGGLES[key] = !TOGGLES[key];
+      document.getElementById('pill-' + key).classList.toggle('on', TOGGLES[key]);
+    }
+
+    function setSort(key, dir) {
+      SORT_KEY = key; SORT_DIR = dir; PAGE = 1;
+      document.querySelectorAll('.spill').forEach(b => b.classList.remove('on'));
+      const idMap = { final_score: 'score', price_numeric: 'price', mileage_numeric: 'mileage', built_year: 'year' };
+      document.getElementById('s-' + idMap[key]).classList.add('on');
+      render();
+    }
+
+    function resetAll() {
+      ['f-search', 'f-min-year', 'f-max-year', 'f-min-price', 'f-max-price', 'f-max-km'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('f-fuel').value = '';
+      TOGGLES.trekhaak = false; TOGGLES.zwart = false;
+      document.getElementById('pill-trekhaak').classList.remove('on');
+      document.getElementById('pill-zwart').classList.remove('on');
+      PAGE = 1; render();
+    }
+
+    // ─── KPI ─────────────────────────────────────────────────────────────────────
+    function renderKPI(data) {
+      const valid = data.filter(c => c.price_numeric > 0);
+      const avgP = valid.length ? Math.round(valid.reduce((s, c) => s + c.price_numeric, 0) / valid.length) : 0;
+      const validK = data.filter(c => c.mileage_numeric > 0);
+      const avgK = validK.length ? Math.round(validK.reduce((s, c) => s + c.mileage_numeric, 0) / validK.length) : 0;
+      const avgS = data.length ? (data.reduce((s, c) => s + (c.final_score || 0), 0) / data.length).toFixed(1) : 0;
+      const trek = data.filter(c => c.has_trekhaak === 1).length;
+      document.getElementById('kpis').innerHTML = `
+    <div class="kpi hi-blue">
+      <div class="kpi-lbl">Total de Carros</div>
+      <div class="kpi-val">${data.length.toLocaleString('nl-NL')}</div>
+      <div class="kpi-sub">na base de dados</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl">Preço Médio</div>
+      <div class="kpi-val">€ ${avgP.toLocaleString('nl-NL')}</div>
+      <div class="kpi-sub">média geral</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl">Km Médio</div>
+      <div class="kpi-val">${avgK.toLocaleString('nl-NL')}</div>
+      <div class="kpi-sub">quilómetros médios</div>
+    </div>
+    <div class="kpi hi-green">
+      <div class="kpi-lbl">Score Médio</div>
+      <div class="kpi-val">${avgS}</div>
+      <div class="kpi-sub">pontuação média</div>
+    </div>
+    <div class="kpi hi-amber">
+      <div class="kpi-lbl">Com Trekhaak</div>
+      <div class="kpi-val">${trek.toLocaleString('nl-NL')}</div>
+      <div class="kpi-sub">têm engate</div>
+    </div>`;
+    }
+
+    // ─── Charts ──────────────────────────────────────────────────────────────────
+    function renderCharts(data) {
+      Chart.defaults.color = '#6b7280';
+      Chart.defaults.font.family = 'Inter';
+
+      // Scatter: top 300
+      const top = data.slice(0, 300);
+      if (charts.scatter) charts.scatter.destroy();
+      charts.scatter = new Chart(document.getElementById('cScatter'), {
+        type: 'scatter',
+        data: {
+          datasets: [
+            { label: 'Normal', data: top.filter(c => !c.has_trekhaak && !c.is_zwart).map(c => ({ x: c.price_numeric, y: c.final_score, n: c.name })), backgroundColor: '#1c6ef360', pointRadius: 4 },
+            { label: 'Trekhaak', data: top.filter(c => c.has_trekhaak).map(c => ({ x: c.price_numeric, y: c.final_score, n: c.name })), backgroundColor: '#f59e0b80', pointRadius: 5 },
+            { label: 'Zwart', data: top.filter(c => c.is_zwart && !c.has_trekhaak).map(c => ({ x: c.price_numeric, y: c.final_score, n: c.name })), backgroundColor: '#94a3b870', pointRadius: 4 },
+          ]
+        },
+        options: {
+          responsive: true, plugins: { legend: { labels: { boxWidth: 10 } }, tooltip: { callbacks: { label: ctx => `${ctx.raw.n} | €${ctx.raw.x?.toLocaleString('nl-NL')} | ${ctx.raw.y?.toFixed(1)}pts` } } },
+          scales: { x: { ticks: { callback: v => '€' + (v / 1000).toFixed(0) + 'k' }, grid: { color: '#252a35' } }, y: { title: { display: true, text: 'Score', color: '#6b7280' }, grid: { color: '#252a35' } } }
+        },
+      });
+
+      // Fuel donut
+      const fuelMap = {};
+      data.forEach(c => { const f = c.fuel_type || 'Onbekend'; fuelMap[f] = (fuelMap[f] || 0) + 1; });
+      const fuelSorted = Object.entries(fuelMap).sort((a, b) => b[1] - a[1]).slice(0, 8);
+      if (charts.fuel) charts.fuel.destroy();
+      charts.fuel = new Chart(document.getElementById('cFuel'), {
+        type: 'doughnut',
+        data: { labels: fuelSorted.map(x => x[0]), datasets: [{ data: fuelSorted.map(x => x[1]), backgroundColor: ['#1c6ef3', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#6b7280'], borderWidth: 0 }] },
+        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 10 } } } },
+      });
+
+      // Price bar
+      const priceEdges = [0, 20000, 30000, 40000, 50000, 60000, 75000, 100000, Infinity];
+      const priceLabels = ['<20k', '20-30k', '30-40k', '40-50k', '50-60k', '60-75k', '75-100k', '>100k'];
+      const priceCounts = priceLabels.map((_, i) => data.filter(c => c.price_numeric > priceEdges[i] && c.price_numeric <= priceEdges[i + 1]).length);
+      if (charts.price) charts.price.destroy();
+      charts.price = new Chart(document.getElementById('cPrice'), {
+        type: 'bar', data: { labels: priceLabels, datasets: [{ label: 'Carros', data: priceCounts, backgroundColor: '#1c6ef360', borderColor: '#1c6ef3', borderWidth: 1, borderRadius: 5 }] },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { grid: { color: '#252a35' } }, y: { grid: { color: '#252a35' } } } },
+      });
+
+      // Year bar
+      const yearMap = {};
+      data.forEach(c => { if (c.built_year > 2005) yearMap[c.built_year] = (yearMap[c.built_year] || 0) + 1; });
+      const yearSorted = Object.entries(yearMap).sort((a, b) => +a[0] - +b[0]);
+      if (charts.year) charts.year.destroy();
+      charts.year = new Chart(document.getElementById('cYear'), {
+        type: 'bar', data: { labels: yearSorted.map(x => x[0]), datasets: [{ label: 'Carros', data: yearSorted.map(x => x[1]), backgroundColor: '#22c55e60', borderColor: '#22c55e', borderWidth: 1, borderRadius: 5 }] },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { grid: { color: '#252a35' } }, y: { grid: { color: '#252a35' } } } },
+      });
+    }
+
+    // ─── Table ───────────────────────────────────────────────────────────────────
+    function renderTable() {
+      const start = (PAGE - 1) * PER;
+      const slice = FILTERED.slice(start, start + PER);
+      const total = FILTERED.length;
+      document.getElementById('t-count').textContent = `${total.toLocaleString('nl-NL')} resultados`;
+      document.getElementById('nav-count').textContent = `${total.toLocaleString('nl-NL')} carros`;
+
+      const fuelBadge = f => {
+        const fl = (f || '').toLowerCase();
+        if (fl.includes('elektr')) return `<span class="badge b-green">⚡ Elétrico</span>`;
+        if (fl.includes('hybride')) return `<span class="badge b-blue">🔋 Híbrido</span>`;
+        if (fl.includes('benzine')) return `<span class="badge b-amber">⛽ Gasolina</span>`;
+        if (fl.includes('diesel')) return `<span class="badge b-gray">🛢 Diesel</span>`;
+        return `<span class="badge b-gray">${f || '—'}</span>`;
+      };
+
+      if (!slice.length) {
+        document.getElementById('tbody').innerHTML = '<tr><td colspan="10" style="text-align:center;padding:48px;color:var(--muted)">Nenhum carro encontrado com esses filtros.</td></tr>';
+        document.getElementById('pages').innerHTML = '';
+        return;
+      }
+
+      document.getElementById('tbody').innerHTML = slice.map((c, i) => {
+        const pct = Math.min(100, +(c.final_score || 0)).toFixed(0);
+        const extras = [
+          c.has_trekhaak === 1 ? '<span class="badge b-amber">🔗 Trekhaak</span>' : '',
+          c.is_zwart === 1 ? '<span class="badge b-gray">🖤 Zwart</span>' : '',
+        ].filter(Boolean).join(' ');
+        return `<tr>
+      <td style="color:var(--muted);font-size:11px">${start + i + 1}</td>
+      <td><div class="cname">${c.name || '—'}</div><div class="cver">${c.version || ''}</div></td>
+      <td>${c.built_year || '—'}</td>
+      <td style="font-weight:600">${c.price_numeric > 0 ? `€ ${c.price_numeric.toLocaleString('nl-NL')}` : '—'}</td>
+      <td>${c.mileage_numeric > 0 ? `${c.mileage_numeric.toLocaleString('nl-NL')} km` : '—'}</td>
+      <td>${fuelBadge(c.fuel_type)}</td>
+      <td style="font-size:11px">${c.color || '—'}</td>
+      <td>${extras || '<span style="color:var(--muted);font-size:10px">—</span>'}</td>
+      <td><div class="sbar"><div class="sbar-bg"><div class="sbar-fill" style="width:${pct}%"></div></div><div class="sbar-val">${(+c.final_score || 0).toFixed(1)}</div></div></td>
+      <td>${c.url && c.url !== 'N/A' ? `<a class="lnk" href="${c.url}" target="_blank" rel="noopener">Ver →</a>` : '—'}</td>
     </tr>`;
-  }).join('');
+      }).join('');
 
-  renderPagination(d.page, d.pages);
-}
+      renderPages(Math.ceil(total / PER));
+    }
 
-function renderPagination(current, total) {
-  const el = document.getElementById('pagination');
-  if (total <= 1) { el.innerHTML = ''; return; }
+    function renderPages(totalPages) {
+      const el = document.getElementById('pages');
+      if (totalPages <= 1) { el.innerHTML = ''; return; }
+      let nums = [];
+      if (totalPages <= 7) nums = Array.from({ length: totalPages }, (_, i) => i + 1);
+      else {
+        nums = [1, 2];
+        if (PAGE > 4) nums.push('…');
+        for (let i = Math.max(3, PAGE - 1); i <= Math.min(totalPages - 2, PAGE + 1); i++) nums.push(i);
+        if (PAGE < totalPages - 3) nums.push('…');
+        nums.push(totalPages - 1, totalPages);
+        nums = [...new Set(nums)];
+      }
+      el.innerHTML = `
+    <button class="pbtn" onclick="goPage(${PAGE - 1})" ${PAGE === 1 ? 'disabled' : ''}>‹</button>
+    ${nums.map(p => p === '…' ? `<span style="color:var(--muted);padding:0 3px">…</span>` :
+        `<button class="pbtn ${p === PAGE ? 'on' : ''}" onclick="goPage(${p})">${p}</button>`).join('')}
+    <button class="pbtn" onclick="goPage(${PAGE + 1})" ${PAGE === totalPages ? 'disabled' : ''}>›</button>`;
+    }
 
-  let pages = [];
-  if (total <= 7) {
-    pages = Array.from({length: total}, (_, i) => i + 1);
-  } else {
-    pages = [1, 2];
-    if (current > 4) pages.push('…');
-    for (let i = Math.max(3, current - 1); i <= Math.min(total - 2, current + 1); i++) pages.push(i);
-    if (current < total - 3) pages.push('…');
-    pages.push(total - 1, total);
-    pages = [...new Set(pages)];
-  }
+    function goPage(p) { PAGE = p; renderTable(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
-  el.innerHTML = `
-    <button class="page-btn" onclick="gotoPage(${current - 1})" ${current === 1 ? 'disabled' : ''}>‹</button>
-    ${pages.map(p => p === '…' ? `<span style="color:var(--muted);padding:0 4px">…</span>` :
-      `<button class="page-btn ${p === current ? 'active' : ''}" onclick="gotoPage(${p})">${p}</button>`
-    ).join('')}
-    <button class="page-btn" onclick="gotoPage(${current + 1})" ${current === total ? 'disabled' : ''}>›</button>
-  `;
-}
+    // ─── Main render ─────────────────────────────────────────────────────────────
+    function render() { PAGE = 1; applyFilters(); renderTable(); }
 
-function gotoPage(p) {
-  state.page = p;
-  loadCars();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
+    // ─── Enter key ───────────────────────────────────────────────────────────────
+    document.querySelectorAll('input').forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') render(); }));
+    document.getElementById('f-fuel').addEventListener('change', render);
 
-// ── CHARTS ────────────────────────────────────────────────────────────────────
-const chartDefaults = { color: '#6b7280', font: { family: 'Inter' } };
-Chart.defaults.color = chartDefaults.color;
-Chart.defaults.font.family = chartDefaults.font.family;
-
-async function loadCharts() {
-  // Scatter: Score vs Price
-  const [scatter, fuel, price] = await Promise.all([
-    fetch('/api/chart/score_vs_price').then(r => r.json()),
-    fetch('/api/chart/fuel_breakdown').then(r => r.json()),
-    fetch('/api/chart/price_distribution').then(r => r.json()),
-  ]);
-
-  new Chart(document.getElementById('chart-scatter'), {
-    type: 'scatter',
-    data: {
-      datasets: [{
-        label: 'Normal',
-        data: scatter.filter(c => !c.has_trekhaak && !c.is_zwart).map(c => ({ x: c.price_numeric, y: c.final_score, name: c.name })),
-        backgroundColor: '#1c6ef360', pointRadius: 5,
-      }, {
-        label: 'Com Trekhaak',
-        data: scatter.filter(c => c.has_trekhaak).map(c => ({ x: c.price_numeric, y: c.final_score, name: c.name })),
-        backgroundColor: '#f59e0b80', pointRadius: 6,
-      }, {
-        label: 'Zwart',
-        data: scatter.filter(c => c.is_zwart && !c.has_trekhaak).map(c => ({ x: c.price_numeric, y: c.final_score, name: c.name })),
-        backgroundColor: '#94a3b880', pointRadius: 5,
-      }],
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { labels: { color: '#6b7280', boxWidth: 10 } },
-        tooltip: { callbacks: { label: ctx => `${ctx.raw.name} | € ${ctx.raw.x?.toLocaleString('nl-NL')} | Score: ${ctx.raw.y?.toFixed(1)}` } },
-      },
-      scales: {
-        x: { ticks: { callback: v => '€' + (v/1000).toFixed(0) + 'k' }, grid: { color: '#252a35' } },
-        y: { title: { display: true, text: 'Score', color: '#6b7280' }, grid: { color: '#252a35' } },
-      },
-    },
-  });
-
-  new Chart(document.getElementById('chart-fuel'), {
-    type: 'doughnut',
-    data: {
-      labels: fuel.labels,
-      datasets: [{ data: fuel.data, backgroundColor: ['#1c6ef3','#22c55e','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#6b7280'], borderWidth: 0 }],
-    },
-    options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#6b7280', padding: 12, boxWidth: 10 } } } },
-  });
-
-  new Chart(document.getElementById('chart-price'), {
-    type: 'bar',
-    data: {
-      labels: price.labels,
-      datasets: [{ label: 'Carros', data: price.data, backgroundColor: '#1c6ef360', borderColor: '#1c6ef3', borderWidth: 1, borderRadius: 6 }],
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { grid: { color: '#252a35' } },
-        y: { grid: { color: '#252a35' } },
-      },
-    },
-  });
-}
-
-// ── Enter key filters ─────────────────────────────────────────────────────────
-document.querySelectorAll('input').forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') applyFilters(); }));
-
-// ── Init ────────────────────────────────────────────────────────────────────
-loadStats();
-loadCars();
-loadCharts();
-</script>
+    // ─── Boot ─────────────────────────────────────────────────────────────────────
+    init().catch(err => {
+      document.getElementById('overlay').innerHTML = `<div class="ov-logo">BMW <em>Car Finder</em></div><div style="color:var(--red);font-size:13px">Erro ao carregar dados: ${err.message}</div><div style="color:var(--muted);font-size:11px">Certifique-se de que data/bmw_data.json existe.</div>`;
+    });
+  </script>
 </body>
+
 </html>
