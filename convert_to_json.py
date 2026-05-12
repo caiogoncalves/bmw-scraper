@@ -26,8 +26,15 @@ KEEP_COLS = [
 ]
 
 print(f"[BMW] Reading {CSV_PATH}…")
-df = pd.read_csv(CSV_PATH, low_memory=False)
-df = df[[c for c in KEEP_COLS if c in df.columns]].copy()
+raw = pd.read_csv(CSV_PATH, low_memory=False)
+df = raw[[c for c in KEEP_COLS if c in raw.columns]].copy()
+
+# built_year is NaN when builtDate was a full date string (e.g. '2022-01-01')
+# recover year from raw 'year' column (first 4 chars)
+if df.get("built_year") is None or df["built_year"].isna().all():
+    df["built_year"] = pd.to_numeric(raw["year"].astype(str).str[:4], errors="coerce")
+df["built_year"] = pd.to_numeric(df["built_year"], errors="coerce")
+df["built_year"] = df["built_year"].where(df["built_year"] > 1900)
 
 # Clean up types
 df["final_score"]    = df["final_score"].round(2)

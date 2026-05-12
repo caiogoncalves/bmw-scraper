@@ -494,21 +494,39 @@ function brandColor(brand) {
 }
 
 // ─── Load Data ───────────────────────────────────────────────────────────────
+const API_BASE = 'https://admin.gumya.com.br/api/cars';
+
+function normalizeDbRow(c) {
+  return {
+    vehicleId:     c.vehicle_id,
+    brand:         c.brand,
+    name:          c.name,
+    version:       c.version,
+    built_year:    c.built_year,
+    price_numeric: c.price != null ? Number(c.price) : null,
+    mileage_numeric: c.mileage != null ? Number(c.mileage) : null,
+    fuel_type:     c.fuel_type,
+    color:         c.color,
+    has_trekhaak:  c.has_trekhaak ? 1 : 0,
+    is_zwart:      c.is_zwart ? 1 : 0,
+    feature_count: c.feature_count,
+    final_score:   c.final_score != null ? Number(c.final_score) : null,
+    url:           c.url,
+  };
+}
+
 async function init() {
-  const files = [
-    { key: 'bmw',      path: '/data/bmw_data.json' },
-    { key: 'mercedes', path: '/data/mercedes_data.json' },
-    { key: 'volvo',    path: '/data/volvo_data.json' },
-  ];
+  const brands = ['bmw', 'mercedes', 'volvo'];
 
   let loaded = 0;
-  for (const { key, path } of files) {
+  for (const key of brands) {
     document.getElementById('ov-status').textContent = `A carregar ${key.toUpperCase()}…`;
     try {
-      const r = await fetch(path);
+      const r = await fetch(`${API_BASE}?brand=${key}&limit=15000&sort=final_score&order=desc`);
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const data = await r.json();
-      ALL_DATA[key] = data.map(c => ({ ...c, brand: key }));
+      const json = await r.json();
+      const data = (json.cars || []).map(normalizeDbRow);
+      ALL_DATA[key] = data;
       loaded++;
       document.getElementById(`cnt-${key}`).textContent = `${data.length.toLocaleString('nl-NL')} carros`;
     } catch (e) {
@@ -903,7 +921,7 @@ init().catch(err => {
     <div class="ov-logo">🚗 <em>Car Finder</em></div>
     <div style="color:var(--red);font-size:13px">Erro ao carregar dados: ${err.message}</div>
     <div style="color:var(--muted);font-size:11px;margin-top:8px;text-align:center;max-width:320px">
-      Certifique-se de que data/bmw_data.json, data/mercedes_data.json e data/volvo_data.json existem.
+      Verifique se a API está acessível em admin.gumya.com.br/api/cars.
     </div>`;
 });
 </script>
